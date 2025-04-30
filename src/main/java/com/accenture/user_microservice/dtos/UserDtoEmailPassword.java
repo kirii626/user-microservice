@@ -1,6 +1,5 @@
 package com.accenture.user_microservice.dtos;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -8,12 +7,9 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDtoInput {
-
-    private String username;
+public class UserDtoEmailPassword {
 
     private String email;
 
     private String password;
-
 }

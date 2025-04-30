@@ -1,5 +1,12 @@
 package com.accenture.user_microservice.dtos;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserDtoOutput {
 
     private Long userId;
@@ -8,24 +15,4 @@ public class UserDtoOutput {
 
     private String email;
 
-    public UserDtoOutput() {
-    }
-
-    public UserDtoOutput(Long userId, String username, String email) {
-        this.userId = userId;
-        this.username = username;
-        this.email = email;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
 }
