@@ -1,28 +1,22 @@
 package com.accenture.user_microservice.services.implementations;
 
-import com.accenture.user_microservice.dtos.UserDtoEmailRole;
-import com.accenture.user_microservice.dtos.UserDtoInput;
-import com.accenture.user_microservice.dtos.UserDtoOutput;
-import com.accenture.user_microservice.dtos.UserDtoRole;
+import com.accenture.user_microservice.dtos.*;
 import com.accenture.user_microservice.models.UserEntity;
 import com.accenture.user_microservice.repositories.UserRepository;
 import com.accenture.user_microservice.services.UserService;
 import com.accenture.user_microservice.services.mappers.UserMapper;
 import com.accenture.user_microservice.utils.ApiResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-
-    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
-        this.userRepository = userRepository;
-        this.userMapper = userMapper;
-    }
 
     @Override
     public ApiResponse<List<UserDtoOutput>> getAll() {
@@ -66,6 +60,15 @@ public class UserServiceImpl implements UserService {
         );
 
         return response;
+    }
+
+    @Override
+    public UserDtoIdUsernameEmail getUserById(Long userId) {
+        UserEntity userEntity = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found by ID"));
+
+        UserDtoIdUsernameEmail userDtoIdUsernameEmail = userMapper.toUserDtoIdUsernameEmail(userEntity);
+        return userDtoIdUsernameEmail;
     }
 
 

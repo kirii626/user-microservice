@@ -1,9 +1,6 @@
 package com.accenture.user_microservice.services;
 
-import com.accenture.user_microservice.dtos.UserDtoEmailRole;
-import com.accenture.user_microservice.dtos.UserDtoInput;
-import com.accenture.user_microservice.dtos.UserDtoOutput;
-import com.accenture.user_microservice.dtos.UserDtoRole;
+import com.accenture.user_microservice.dtos.*;
 import com.accenture.user_microservice.utils.ApiResponse;
 import jakarta.validation.Valid;
 
@@ -16,4 +13,6 @@ public interface UserService {
     ApiResponse<UserDtoEmailRole> changeRoleType(@Valid Long userId, UserDtoRole userDtoRole);
 
     ApiResponse<UserDtoOutput> createUser(@Valid UserDtoInput userDtoInput);
+
+    UserDtoIdUsernameEmail getUserById(Long userId);
 }
