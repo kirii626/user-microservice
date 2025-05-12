@@ -7,6 +7,8 @@ import com.accenture.user_microservice.services.UserService;
 import com.accenture.user_microservice.services.mappers.UserMapper;
 import com.accenture.user_microservice.utils.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,6 +21,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
 
     @Override
+    @Cacheable("users")
     public ApiResponse<List<UserDtoOutput>> getAll() {
         List<UserEntity> userEntityList = userRepository.findAll();
         List<UserDtoOutput> userDtoOutputList = userMapper.toUserDtoOutputList(userEntityList);
@@ -32,6 +35,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "users", allEntries = true)
     public ApiResponse<UserDtoEmailRole> changeRoleType(Long userId, UserDtoRole userDtoRole) {
         UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found by ID:"));
@@ -48,6 +52,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "users", allEntries = true)
     public ApiResponse<UserDtoOutput> createUser(UserDtoInput userDtoInput) {
         UserEntity userEntity = userMapper.userDtoInputToEntity(userDtoInput);
         userRepository.save(userEntity);
@@ -63,6 +68,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = "userById", key = "#userId")
     public UserDtoIdUsernameEmail getUserById(Long userId) {
         UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found by ID"));
