@@ -1,11 +1,10 @@
 package com.accenture.user_microservice.services.mappers;
 
-import com.accenture.user_microservice.dtos.UserDtoEmailRole;
-import com.accenture.user_microservice.dtos.UserDtoIdUsernameEmail;
-import com.accenture.user_microservice.dtos.UserDtoInput;
-import com.accenture.user_microservice.dtos.UserDtoOutput;
+import com.accenture.user_microservice.dtos.input.UserDtoInput;
+import com.accenture.user_microservice.dtos.output.UserDtoEmailRole;
+import com.accenture.user_microservice.dtos.output.UserDtoIdUsernameEmail;
+import com.accenture.user_microservice.dtos.output.UserDtoOutput;
 import com.accenture.user_microservice.models.UserEntity;
-import com.accenture.user_microservice.models.enums.RoleType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;

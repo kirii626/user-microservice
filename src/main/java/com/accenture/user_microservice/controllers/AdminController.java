@@ -1,9 +1,9 @@
 package com.accenture.user_microservice.controllers;
 
-import com.accenture.user_microservice.dtos.UserDtoEmailRole;
-import com.accenture.user_microservice.dtos.UserDtoOutput;
-import com.accenture.user_microservice.dtos.UserDtoRole;
-import com.accenture.user_microservice.dtos.UserDtoIdUsernameEmail;
+import com.accenture.user_microservice.dtos.output.UserDtoEmailRole;
+import com.accenture.user_microservice.dtos.output.UserDtoOutput;
+import com.accenture.user_microservice.dtos.output.UserDtoRole;
+import com.accenture.user_microservice.dtos.output.UserDtoIdUsernameEmail;
 import com.accenture.user_microservice.services.UserService;
 import com.accenture.user_microservice.utils.ApiResponse;
 import jakarta.validation.Valid;
@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Locale;
 
 @RequiredArgsConstructor
 @RestController
@@ -46,7 +45,7 @@ public class AdminController {
     }
 
     @GetMapping("/user-by-id/{userId}")
-    public UserDtoIdUsernameEmail getUserById(@PathVariable Long userId) {
+    public UserDtoIdUsernameEmail getUserById(@Valid @PathVariable Long userId) {
         return userService.getUserById(userId);
     }
 }

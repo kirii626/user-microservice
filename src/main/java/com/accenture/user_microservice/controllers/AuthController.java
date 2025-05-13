@@ -1,8 +1,8 @@
 package com.accenture.user_microservice.controllers;
 
-import com.accenture.user_microservice.dtos.UserDtoInput;
-import com.accenture.user_microservice.dtos.UserDtoOutput;
-import com.accenture.user_microservice.dtos.UserDtoEmailPassword;
+import com.accenture.user_microservice.dtos.input.UserDtoInput;
+import com.accenture.user_microservice.dtos.output.UserDtoOutput;
+import com.accenture.user_microservice.dtos.output.UserDtoEmailPassword;
 import com.accenture.user_microservice.services.AuthService;
 import com.accenture.user_microservice.utils.ApiResponse;
 import jakarta.validation.Valid;
