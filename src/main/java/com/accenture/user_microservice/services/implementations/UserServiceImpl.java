@@ -26,7 +26,7 @@ public class UserServiceImpl implements UserService {
         List<UserEntity> userEntityList = userRepository.findAll();
         List<UserDtoOutput> userDtoOutputList = userMapper.toUserDtoOutputList(userEntityList);
 
-        return response;
+        return userDtoOutputList;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class UserServiceImpl implements UserService {
 
         UserDtoEmailRole userDtoEmailRole = userMapper.toUserDtoEmailRole(savedEntity);
 
-        return response;
+        return userDtoEmailRole;
     }
 
     @Override
@@ -50,7 +50,7 @@ public class UserServiceImpl implements UserService {
 
         UserDtoOutput userDtoOutput = userMapper.toUserDtoOutput(userEntity);
 
-        return response;
+        return userDtoOutput;
     }
 
     @Override
