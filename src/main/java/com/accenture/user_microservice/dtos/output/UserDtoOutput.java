@@ -1,4 +1,4 @@
-package com.accenture.user_microservice.dtos;
+package com.accenture.user_microservice.dtos.output;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,14 +1,17 @@
-package com.accenture.user_microservice.dtos;
+package com.accenture.user_microservice.dtos.output;
 
 import com.accenture.user_microservice.models.enums.RoleType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDtoRole {
+public class UserDtoEmailRole {
+
+    private String email;
 
     private RoleType roleType;
 
