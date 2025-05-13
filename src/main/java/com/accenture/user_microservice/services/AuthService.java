@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
 
-    ApiResponse<UserDtoOutput> createUser(UserDtoInput userDtoInput);
+    UserDtoOutput createUser(UserDtoInput userDtoInput);
 
     String authenticateAndGenerateToken(String email, String password);
 }

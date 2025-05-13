@@ -22,21 +22,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Cacheable("users")
-    public ApiResponse<List<UserDtoOutput>> getAll() {
+    public List<UserDtoOutput> getAll() {
         List<UserEntity> userEntityList = userRepository.findAll();
         List<UserDtoOutput> userDtoOutputList = userMapper.toUserDtoOutputList(userEntityList);
-
-        ApiResponse response = new ApiResponse<>(
-                "All users:",
-                userDtoOutputList
-        );
 
         return response;
     }
 
     @Override
     @CacheEvict(value = "users", allEntries = true)
-    public ApiResponse<UserDtoEmailRole> changeRoleType(Long userId, UserDtoRole userDtoRole) {
+    public UserDtoEmailRole changeRoleType(Long userId, UserDtoRole userDtoRole) {
         UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found by ID:"));
         userEntity.setRoleType(userDtoRole.getRoleType());
@@ -44,25 +39,16 @@ public class UserServiceImpl implements UserService {
 
         UserDtoEmailRole userDtoEmailRole = userMapper.toUserDtoEmailRole(savedEntity);
 
-        ApiResponse response = new ApiResponse<>(
-                "Role updated successfully",
-                userDtoEmailRole
-        );
         return response;
     }
 
     @Override
     @CacheEvict(value = "users", allEntries = true)
-    public ApiResponse<UserDtoOutput> createUser(UserDtoInput userDtoInput) {
+    public UserDtoOutput createUser(UserDtoInput userDtoInput) {
         UserEntity userEntity = userMapper.userDtoInputToEntity(userDtoInput);
         userRepository.save(userEntity);
 
         UserDtoOutput userDtoOutput = userMapper.toUserDtoOutput(userEntity);
-
-        ApiResponse response = new ApiResponse<>(
-                "User created successfully",
-                userDtoOutput
-        );
 
         return response;
     }

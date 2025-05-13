@@ -33,7 +33,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public ApiResponse<UserDtoOutput> createUser(UserDtoInput userDtoInput) {
+    public UserDtoOutput createUser(UserDtoInput userDtoInput) {
         return userService.createUser(userDtoInput);
     }
 

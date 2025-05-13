@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 
 @RequiredArgsConstructor
 @RestController
@@ -21,13 +22,27 @@ public class AdminController {
 
     @GetMapping("/all-users")
     public ApiResponse<List<UserDtoOutput>> getAllUsers() {
-        return userService.getAll();
+        List<UserDtoOutput> userDtoOutputList = userService.getAll();
+
+        ApiResponse<List<UserDtoOutput>> response = new ApiResponse<>(
+                "List of all users",
+                userDtoOutputList
+        );
+
+        return response;
     }
 
     @PatchMapping("/change-role/{userId}")
     public ApiResponse<UserDtoEmailRole> changeRoleType(@Valid @PathVariable Long userId,
                                                         @RequestBody UserDtoRole userDtoRole) {
-        return userService.changeRoleType(userId, userDtoRole);
+        UserDtoEmailRole userDtoEmailRole = userService.changeRoleType(userId, userDtoRole);
+
+        ApiResponse<UserDtoEmailRole> response = new ApiResponse<>(
+                "Role updated successfully",
+                userDtoEmailRole
+        );
+
+        return response;
     }
 
     @GetMapping("/user-by-id/{userId}")

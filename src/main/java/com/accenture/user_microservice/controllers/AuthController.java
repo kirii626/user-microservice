@@ -22,7 +22,14 @@ public class AuthController {
 
     @PostMapping
     public ApiResponse<UserDtoOutput> registerUser(@Valid @RequestBody UserDtoInput userDtoInput) {
-        return authService.createUser(userDtoInput);
+        UserDtoOutput userDtoOutput = authService.createUser(userDtoInput);
+
+        ApiResponse<UserDtoOutput> response = new ApiResponse<>(
+                "User created successfully",
+                userDtoOutput
+        );
+
+        return response;
     }
 
     @PostMapping("/log-in")

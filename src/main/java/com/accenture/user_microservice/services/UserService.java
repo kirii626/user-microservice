@@ -8,11 +8,11 @@ import java.util.List;
 
 public interface UserService {
 
-    ApiResponse<List<UserDtoOutput>> getAll();
+    List<UserDtoOutput> getAll();
 
-    ApiResponse<UserDtoEmailRole> changeRoleType(@Valid Long userId, UserDtoRole userDtoRole);
+    UserDtoEmailRole changeRoleType(@Valid Long userId, UserDtoRole userDtoRole);
 
-    ApiResponse<UserDtoOutput> createUser(@Valid UserDtoInput userDtoInput);
+    UserDtoOutput createUser(@Valid UserDtoInput userDtoInput);
 
     UserDtoIdUsernameEmail getUserById(Long userId);
 }
