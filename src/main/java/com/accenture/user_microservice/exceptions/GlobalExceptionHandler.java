@@ -16,22 +16,11 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiResponse<String>> handleNotFound(UserNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ApiResponse<>("Not found", ex.getMessage()));
-    }
-
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ApiResponse<String>> handleApi(ApiException ex) {
-        return ResponseEntity.status(ex.getStatus())
-                .body(new ApiResponse<>("Error", ex.getMessage()));
-    }
-
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<ApiResponse<String>> handleInvalidCredentials(InvalidCredentialsException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>("Invalid Credentials", ex.getMessage()));
+    public ResponseEntity<Map<String, String>> handleApiException(ApiException ex) {
+        return ResponseEntity
+                .status(ex.getStatus())
+                .body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
