@@ -1,12 +1,21 @@
 package com.accenture.user_microservice.services.implementations;
 
-import com.accenture.user_microservice.dtos.*;
+import com.accenture.user_microservice.dtos.input.UserDtoInput;
+import com.accenture.user_microservice.dtos.output.UserDtoEmailRole;
+import com.accenture.user_microservice.dtos.output.UserDtoIdUsernameEmail;
+import com.accenture.user_microservice.dtos.output.UserDtoOutput;
+import com.accenture.user_microservice.dtos.output.UserDtoRole;
+import com.accenture.user_microservice.exceptions.InternalServerErrorException;
+import com.accenture.user_microservice.exceptions.UserNotFoundException;
 import com.accenture.user_microservice.models.UserEntity;
 import com.accenture.user_microservice.repositories.UserRepository;
 import com.accenture.user_microservice.services.UserService;
 import com.accenture.user_microservice.services.mappers.UserMapper;
-import com.accenture.user_microservice.utils.ApiResponse;
+import com.accenture.user_microservice.services.validations.ValidRoleType;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -15,52 +24,101 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final ValidRoleType validRoleType;
 
     @Override
     @Cacheable("users")
-    public List<UserDtoOutput> getAll() {
-        List<UserEntity> userEntityList = userRepository.findAll();
-        List<UserDtoOutput> userDtoOutputList = userMapper.toUserDtoOutputList(userEntityList);
+    public List<UserDtoOutput> getAll(HttpServletRequest httpServletRequest) {
+        log.info("Fetching all users");
 
-        return userDtoOutputList;
+        try {
+            validRoleType.validateAdminRole(httpServletRequest);
+            log.debug("Admin role validated for getAll");
+            List<UserEntity> userEntityList = userRepository.findAll();
+
+            List<UserDtoOutput> userDtoOutputList = userMapper.toUserDtoOutputList(userEntityList);
+
+            log.info("Fetched {} users", userEntityList.size());
+            return userDtoOutputList;
+        } catch (InternalServerErrorException ex) {
+            log.error("Unexpected error during fetching users", ex);
+            throw new InternalServerErrorException("Unexpected error during fetching users", ex);
+        }
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = "users", allEntries = true)
-    public UserDtoEmailRole changeRoleType(Long userId, UserDtoRole userDtoRole) {
-        UserEntity userEntity = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found by ID:"));
-        userEntity.setRoleType(userDtoRole.getRoleType());
-        UserEntity savedEntity = userRepository.save(userEntity);
+    public UserDtoEmailRole changeRoleType(HttpServletRequest httpServletRequest, Long userId, UserDtoRole userDtoRole) {
+        log.info("Starting processes for update role type of user {}", userId);
 
-        UserDtoEmailRole userDtoEmailRole = userMapper.toUserDtoEmailRole(savedEntity);
+        try {
+            validRoleType.validateAdminRole(httpServletRequest);
+            log.debug("Admin role validated for changeRoleType");
 
-        return userDtoEmailRole;
+            UserEntity userEntity = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException(userId));
+            userEntity.setRoleType(userDtoRole.getRoleType());
+            UserEntity savedEntity = userRepository.save(userEntity);
+
+            UserDtoEmailRole userDtoEmailRole = userMapper.toUserDtoEmailRole(savedEntity);
+
+            log.info("Updated role for user {} to {}", userId, userDtoEmailRole.getRoleType());
+
+            return userDtoEmailRole;
+        } catch (Exception ex) {
+            log.error("Unexpected error while updating user", ex);
+            throw new InternalServerErrorException("Unexpected error while updating user's role", ex);
+        }
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = "users", allEntries = true)
     public UserDtoOutput createUser(UserDtoInput userDtoInput) {
-        UserEntity userEntity = userMapper.userDtoInputToEntity(userDtoInput);
-        userRepository.save(userEntity);
+        log.info("Starting processes to create a new user");
 
-        UserDtoOutput userDtoOutput = userMapper.toUserDtoOutput(userEntity);
+        try {
+            UserEntity userEntity = userMapper.userDtoInputToEntity(userDtoInput);
+            userRepository.save(userEntity);
 
-        return userDtoOutput;
+            UserDtoOutput userDtoOutput = userMapper.toUserDtoOutput(userEntity);
+
+            log.info("User created: {}", userDtoOutput.getEmail());
+
+            return userDtoOutput;
+        } catch (Exception ex) {
+            log.error("Unexpected error while creating user", ex);
+            throw new InternalServerErrorException("Unexpected error while creating user", ex);
+        }
     }
 
     @Override
     @Cacheable(value = "userById", key = "#userId")
     public UserDtoIdUsernameEmail getUserById(Long userId) {
-        UserEntity userEntity = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found by ID"));
+        log.info("Starting search of user by ID {}", userId);
 
-        UserDtoIdUsernameEmail userDtoIdUsernameEmail = userMapper.toUserDtoIdUsernameEmail(userEntity);
-        return userDtoIdUsernameEmail;
+        try {
+            UserEntity userEntity = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException(userId));
+
+            UserDtoIdUsernameEmail userDtoIdUsernameEmail = userMapper.toUserDtoIdUsernameEmail(userEntity);
+
+            log.info("User found by ID: {} | Email: {}", userDtoIdUsernameEmail.getUserId(), userDtoIdUsernameEmail.getEmail());
+
+            return userDtoIdUsernameEmail;
+        } catch (UserNotFoundException ex) {
+            log.warn("User not found by ID: {}", userId);
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Unexpected error while searching user by its ID", ex);
+            throw new InternalServerErrorException("Unexpected error while searching user by its ID", ex);
+        }
     }
 
 

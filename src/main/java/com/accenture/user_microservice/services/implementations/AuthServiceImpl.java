@@ -1,36 +1,33 @@
 package com.accenture.user_microservice.services.implementations;
 
 import com.accenture.user_microservice.config.security.JwtUtils;
-import com.accenture.user_microservice.dtos.UserDtoInput;
-import com.accenture.user_microservice.dtos.UserDtoOutput;
+import com.accenture.user_microservice.dtos.input.UserDtoInput;
+import com.accenture.user_microservice.dtos.output.UserDtoOutput;
+import com.accenture.user_microservice.exceptions.InternalServerErrorException;
+import com.accenture.user_microservice.exceptions.InvalidCredentialsException;
 import com.accenture.user_microservice.services.AuthService;
 import com.accenture.user_microservice.services.UserService;
-import com.accenture.user_microservice.utils.ApiResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@RequiredArgsConstructor
 @Service
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
+    private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final UserService userService;
-
-    public AuthServiceImpl(JwtUtils jwtUtils, UserService userService) {
-        this.jwtUtils = jwtUtils;
-        this.userService = userService;
-    }
 
     @Override
     public UserDtoOutput createUser(UserDtoInput userDtoInput) {
@@ -39,6 +36,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String authenticateAndGenerateToken(String email, String password) {
+        log.info("Starting authentication for email {}", email);
+
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(email, password)
@@ -51,15 +50,23 @@ public class AuthServiceImpl implements AuthService {
             String roleType = authentication.getAuthorities()
                     .stream()
                     .findFirst()
-                    .map(authority -> authority.getAuthority())
+                    .map(GrantedAuthority::getAuthority)
                     .orElse("USER");
 
             Map<String, String> claims = new HashMap<>();
             claims.put("roleType", roleType);
 
-            return jwtUtils.generateToken(username, claims);
-        } catch (BadCredentialsException e) {
-            throw new RuntimeException("Invalid email or password");
+            String token = jwtUtils.generateToken(username, claims);
+
+            log.info("User '{}' authenticated successfully with role '{}'", username, roleType);
+
+            return token;
+        } catch (BadCredentialsException ex) {
+            log.warn("Authentication failed for email '{}': {}", email, ex.getMessage());
+            throw new InvalidCredentialsException();
+        } catch (Exception ex) {
+            log.error("Unexpected error during authentication for email '{}'", email, ex);
+            throw new InternalServerErrorException("Unexpected error during authentication", ex);
         }
     }
 }
