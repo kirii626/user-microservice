@@ -24,12 +24,10 @@ public class AdminController {
     public ApiResponse<List<UserDtoOutput>> getAllUsers(HttpServletRequest httpServletRequest) {
         List<UserDtoOutput> userDtoOutputList = userService.getAll(httpServletRequest);
 
-        ApiResponse<List<UserDtoOutput>> response = new ApiResponse<>(
+        return new ApiResponse<>(
                 "List of all users",
                 userDtoOutputList
         );
-
-        return response;
     }
 
     @PatchMapping("/change-role/{userId}")
@@ -37,12 +35,10 @@ public class AdminController {
                                                         @Valid @RequestBody UserDtoRole userDtoRole) {
         UserDtoEmailRole userDtoEmailRole = userService.changeRoleType(httpServletRequest, userId, userDtoRole);
 
-        ApiResponse<UserDtoEmailRole> response = new ApiResponse<>(
+        return new ApiResponse<>(
                 "Role updated successfully",
                 userDtoEmailRole
         );
-
-        return response;
     }
 
     @GetMapping("/user-by-id/{userId}")
