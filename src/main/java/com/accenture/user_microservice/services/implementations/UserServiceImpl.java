@@ -5,7 +5,9 @@ import com.accenture.user_microservice.dtos.output.UserDtoEmailRole;
 import com.accenture.user_microservice.dtos.output.UserDtoIdUsernameEmail;
 import com.accenture.user_microservice.dtos.output.UserDtoOutput;
 import com.accenture.user_microservice.dtos.output.UserDtoRole;
+import com.accenture.user_microservice.exceptions.ForbiddenAccessException;
 import com.accenture.user_microservice.exceptions.InternalServerErrorException;
+import com.accenture.user_microservice.exceptions.InvalidAuthorizationHeaderException;
 import com.accenture.user_microservice.exceptions.UserNotFoundException;
 import com.accenture.user_microservice.models.UserEntity;
 import com.accenture.user_microservice.repositories.UserRepository;
@@ -45,7 +47,10 @@ public class UserServiceImpl implements UserService {
 
             log.info("Fetched {} users", userEntityList.size());
             return userDtoOutputList;
-        } catch (InternalServerErrorException ex) {
+        } catch (InvalidAuthorizationHeaderException | ForbiddenAccessException ex) {
+            log.warn("User without permissions to access to this resource at getAll");
+            throw ex;
+        } catch (Exception ex) {
             log.error("Unexpected error during fetching users", ex);
             throw new InternalServerErrorException("Unexpected error during fetching users", ex);
         }
@@ -71,6 +76,9 @@ public class UserServiceImpl implements UserService {
             log.info("Updated role for user {} to {}", userId, userDtoEmailRole.getRoleType());
 
             return userDtoEmailRole;
+        } catch (InvalidAuthorizationHeaderException | ForbiddenAccessException ex) {
+            log.warn("User without permissions to access to this resource at ChangeRoleType");
+            throw ex;
         } catch (Exception ex) {
             log.error("Unexpected error while updating user", ex);
             throw new InternalServerErrorException("Unexpected error while updating user's role", ex);
