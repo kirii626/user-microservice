@@ -1,4 +1,4 @@
-package com.accenture.user_microservice.config.security;
+package com.accenture.user_microservice.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
