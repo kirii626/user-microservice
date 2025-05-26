@@ -10,7 +10,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Component
@@ -39,7 +38,7 @@ public class UserMapper {
         return userEntityList
                 .stream()
                 .map(this::toUserDtoOutput)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public UserDtoEmailRole toUserDtoEmailRole(UserEntity userEntity) {

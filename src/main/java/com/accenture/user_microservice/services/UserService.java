@@ -6,7 +6,6 @@ import com.accenture.user_microservice.dtos.output.UserDtoIdUsernameEmail;
 import com.accenture.user_microservice.dtos.output.UserDtoOutput;
 import com.accenture.user_microservice.dtos.output.UserDtoRole;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 
 import java.util.List;
 
