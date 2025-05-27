@@ -18,9 +18,9 @@ A secure, modular microservice built with Spring Boot for managing users and han
   - [Redis cache configuration](#%EF%B8%8F-redis-cache-configuration)
   - [Running the Application](#%EF%B8%8F-running-the-application)
 - [Security](#-security)
-  - [How works JWT in this project?](#-how-works-JWT-in-this-project)
+  - [How works JWT in this project?](#how-works-JWT-in-this-project)
   - [Authentication Flow](#-authentication-flow)
-  - [Token Structure](#-token-tructure)
+  - [Token Structure](#-token-structure)
 - [Project Structure](#-project-structure)
 
 ---
