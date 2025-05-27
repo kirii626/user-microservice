@@ -8,17 +8,16 @@ A secure, modular microservice built with Spring Boot for managing users and han
 
 - [Overview](#-overview)
 - [Features](#-features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Setup](#setup)
-  - [Configure the Database](#configure-the-database)
-  - [Running the Application](#running-the-application)
-- [Configuration](#configuration)
-- [Database](#database)
-- [Security](#security)
-- [Project Structure](#project-structure)
+- [Architecture](#-architecture)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#-prerequisites)
+  - [Setup](#-setup)
+  - [Configure the Database](#-configure-the-database)
+  - [Running the Application](#-running-the-application)
+- [Database](#-database)
+- [Security](#-security)
+- [Project Structure](#-project-structure)
 
 ---
 
@@ -80,14 +79,14 @@ Security Layer (JWT + BCrypt)
 
 ### ⚙️ Setup
 
-1. Clone the repository:
+🔧 1. Clone the repository:
 
         git clone https://github.com/your-org/user-microservice.git
         cd user-microservice
    
-## ⚙️ Configure the Database
+### ⚙️ Configure the Database
 
-### 🔧 Step 2: Update Database Credentials
+🔧 Step 2: Update Database Credentials
 
 Edit the following file to configure your database connection while developing using H2 DB:
 
@@ -99,7 +98,7 @@ Example:
     spring.h2.console.path=/h2-console
     spring.datasource.url=jdbc:h2:mem:testdb
 
-# JWT configuration
+### ⚙️ JWT configuration
     jwt.secret=your_jwt_secret_key
     jwt.expiration=3600000  # in milliseconds
 
