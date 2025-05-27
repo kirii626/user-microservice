@@ -40,12 +40,11 @@ This microservice provides RESTful endpoints to manage user registration, authen
 
 ## 🏗 Architecture
 
-Controller Layer → Service Layer → Repository Layer → Database
-↓ ↓ ↓
-DTOs Business Logic Spring Data JPA
-↓
-Security Layer (JWT + BCrypt)
+This is the complete architecture which user-microservice formes part
 
+![Untitled Diagram drawio](https://github.com/user-attachments/assets/64d6f647-3342-4655-b840-3784560d0c3b)
+
+These are the elements of user-microservice: 
 
 - **Controller Layer:** Manages incoming HTTP requests and responses
 - **Service Layer:** Core business logic (`AuthService`, etc.)
