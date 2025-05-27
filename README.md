@@ -14,9 +14,13 @@ A secure, modular microservice built with Spring Boot for managing users and han
   - [Prerequisites](#-prerequisites)
   - [Setup](#%EF%B8%8F-setup)
   - [Configure the Database](#%EF%B8%8F-configure-the-database)
+  - [Eureka server configuration](#%EF%B8%8F-eureka-server-configuration)
+  - [Redis cache configuration](#%EF%B8%8F-redis-cache-configuration)
   - [Running the Application](#%EF%B8%8F-running-the-application)
-- [Database](#-database)
 - [Security](#-security)
+  -[How works JWT in this project?](#-how-works-JWT-in-this-project)
+  -[Authentication Flow](#-authentication-flow)
+  -[Token Structure](#-token-tructure)
 - [Project Structure](#-project-structure)
 
 ---
@@ -78,16 +82,31 @@ These are the elements of user-microservice:
 
 ### ⚙️ Setup 
 
-🔧 1. Clone the repository:
+🔧 Clone the repository:
 
         git clone https://github.com/your-org/user-microservice.git
         cd user-microservice
+        
+### ⚙️ General Configurations
+
+🔧  You'll find the general configurations at applications.properties defined using environment variables like this: 
+
+    jwt.expiration=${JWT_EXPIRATION}
+    jwt.secret=${JWT_SECRET}
+    
+    spring.cache.type=redis
+    spring.redis.host={SPRING_REDIS_HOST}
+    spring.redis.port={REDIS_PORT}
+
+so you need to define them on your IDE, using a .env file or just putting the configurations directly on the .properties file instead(this is the most unsafe option).
    
 ### ⚙️ Configure the Database
 
-🔧 Step 2: Update Database Credentials
+🔧 Update Database Credentials
 
-Edit the following file to configure your database connection while developing using H2 DB:
+#### For developing 
+
+Edit the following file to configure your H2 database connection while developing:
 
 📄 `src/main/resources/application-dev.properties`
 
@@ -97,10 +116,42 @@ Example:
     spring.h2.console.path=/h2-console
     spring.datasource.url=jdbc:h2:mem:testdb
 
+#### For postgres using Docker/Podman
+
+📄 `src/main/resources/application-docker.properties`
+
+Example: 
+
+    spring.datasource.username=your_user
+    spring.datasource.password=your_password
+    spring.datasource.driver-class-name=org.postgresql.Driver
+    spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+
+### ⚙️ Eureka server configuration
+
+📄 `src/main/resources/application.properties`
+
+Example: 
+
+    eureka.client.service-url.defaultZone=http://localhost:your_port/eureka/
+    eureka.client.register-with-eureka=true
+    eureka.client.fetch-registry=true 
+    eureka.instance.prefer-ip-address=true
+
 ### ⚙️ JWT configuration
+
+Example: 
 
     jwt.secret=your_jwt_secret_key
     jwt.expiration=3600000  # in milliseconds
+
+### ⚙️ Redis cache configuration
+
+Example:
+
+    spring.cache.type=redis
+    spring.redis.host=localhost
+    spring.redis.port=your_port
 
 ### ▶️ Running the Application 
 
@@ -119,6 +170,33 @@ The service will be available by default at:
 but you can configure it at application.properties file using this line at application.properties: 
 
     server.port=8085
+
+## Security
+### How works JWT in this project? 
+This project uses JSON Web Tokens (JWT) for stateless, secure authentication and authorization across its REST API.
+
+---
+
+### 🔑 Authentication Flow
+
+When a user logs in via:
+
+    POST /api/auth/log-in
+
+- Their credentials are validated by the backend.
+- If valid, a JWT is generated and returned in the response.
+- The token contains encoded user information and is cryptographically signed.
+
+---
+
+### 📦 Token Structure
+
+- The JWT consists of three parts: `header.payload.signature`
+- It includes user identification data, such as the user's ID or email, and the role of the user for allow access to resources.
+- It is signed using a secret key configured at application.properties:
+
+      jwt.secret=your_jwt_secret
+      jwt.expiration=3600000
 
 ## 📁 Project Structure
 
