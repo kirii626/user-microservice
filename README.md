@@ -14,7 +14,7 @@ A secure, modular microservice built with Spring Boot for managing users and han
   - [Prerequisites](#-prerequisites)
   - [Setup](#%EF%B8%8F-setup)
   - [Configure the Database](#%EF%B8%8F-configure-the-database)
-  - [Running the Application](#-%EF%B8%8F-running-the-application)
+  - [Running the Application](#%EF%B8%8F-running-the-application)
 - [Database](#-database)
 - [Security](#-security)
 - [Project Structure](#-project-structure)
@@ -121,7 +121,7 @@ but you can configure it at application.properties file using this line at appli
 
     server.port=8085
 
-##📁 Project Structure
+## 📁 Project Structure
 
     src/
      └── main/
