@@ -6,8 +6,8 @@ A secure, modular microservice built with Spring Boot for managing users and han
 
 ## 📚 Table of Contents
 
-- [Overview](##overview)
-- [Features](#features)
+- [Overview](#-overview)
+- [Features](#-features)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
