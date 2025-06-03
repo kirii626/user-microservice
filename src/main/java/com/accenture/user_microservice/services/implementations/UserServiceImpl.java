@@ -5,16 +5,12 @@ import com.accenture.user_microservice.dtos.output.UserDtoEmailRole;
 import com.accenture.user_microservice.dtos.output.UserDtoIdUsernameEmail;
 import com.accenture.user_microservice.dtos.output.UserDtoOutput;
 import com.accenture.user_microservice.dtos.output.UserDtoRole;
-import com.accenture.user_microservice.exceptions.ForbiddenAccessException;
 import com.accenture.user_microservice.exceptions.InternalServerErrorException;
-import com.accenture.user_microservice.exceptions.InvalidAuthorizationHeaderException;
 import com.accenture.user_microservice.exceptions.UserNotFoundException;
 import com.accenture.user_microservice.models.UserEntity;
 import com.accenture.user_microservice.repositories.UserRepository;
 import com.accenture.user_microservice.services.UserService;
 import com.accenture.user_microservice.services.mappers.UserMapper;
-import com.accenture.user_microservice.services.validations.ValidRoleType;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +18,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -31,25 +28,21 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-    private final ValidRoleType validRoleType;
 
     @Override
-    @Cacheable("users")
-    public List<UserDtoOutput> getAll(HttpServletRequest httpServletRequest) {
+    @Cacheable(value = "users", key = "'allUsers'")
+    public ArrayList<UserDtoOutput> getAll() {
         log.info("Fetching all users");
 
         try {
-            validRoleType.validateAdminRole(httpServletRequest);
             log.debug("Admin role validated for getAll");
             List<UserEntity> userEntityList = userRepository.findAll();
 
             List<UserDtoOutput> userDtoOutputList = userMapper.toUserDtoOutputList(userEntityList);
+            ArrayList<UserDtoOutput> userDtoOutputArrayList = new ArrayList<>(userDtoOutputList);
 
             log.info("Fetched {} users", userEntityList.size());
-            return userDtoOutputList;
-        } catch (InvalidAuthorizationHeaderException | ForbiddenAccessException ex) {
-            log.warn("User without permissions to access to this resource at getAll");
-            throw ex;
+            return userDtoOutputArrayList;
         } catch (Exception ex) {
             log.error("Unexpected error during fetching users", ex);
             throw new InternalServerErrorException("Unexpected error during fetching users", ex);
@@ -59,11 +52,10 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     @CacheEvict(value = "users", allEntries = true)
-    public UserDtoEmailRole changeRoleType(HttpServletRequest httpServletRequest, Long userId, UserDtoRole userDtoRole) {
+    public UserDtoEmailRole changeRoleType(Long userId, UserDtoRole userDtoRole) {
         log.info("Starting processes for update role type of user {}", userId);
 
         try {
-            validRoleType.validateAdminRole(httpServletRequest);
             log.debug("Admin role validated for changeRoleType");
 
             UserEntity userEntity = userRepository.findById(userId)
@@ -76,9 +68,6 @@ public class UserServiceImpl implements UserService {
             log.info("Updated role for user {} to {}", userId, userDtoEmailRole.getRoleType());
 
             return userDtoEmailRole;
-        } catch (InvalidAuthorizationHeaderException | ForbiddenAccessException ex) {
-            log.warn("User without permissions to access to this resource at ChangeRoleType");
-            throw ex;
         } catch (Exception ex) {
             log.error("Unexpected error while updating user", ex);
             throw new InternalServerErrorException("Unexpected error while updating user's role", ex);
@@ -128,6 +117,4 @@ public class UserServiceImpl implements UserService {
             throw new InternalServerErrorException("Unexpected error while searching user by its ID", ex);
         }
     }
-
-
 }
