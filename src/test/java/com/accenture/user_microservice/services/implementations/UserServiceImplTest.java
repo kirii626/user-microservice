@@ -5,192 +5,142 @@ import com.accenture.user_microservice.dtos.output.UserDtoEmailRole;
 import com.accenture.user_microservice.dtos.output.UserDtoIdUsernameEmail;
 import com.accenture.user_microservice.dtos.output.UserDtoOutput;
 import com.accenture.user_microservice.dtos.output.UserDtoRole;
-import com.accenture.user_microservice.exceptions.ForbiddenAccessException;
 import com.accenture.user_microservice.exceptions.InternalServerErrorException;
 import com.accenture.user_microservice.exceptions.UserNotFoundException;
 import com.accenture.user_microservice.models.UserEntity;
 import com.accenture.user_microservice.models.enums.RoleType;
 import com.accenture.user_microservice.repositories.UserRepository;
 import com.accenture.user_microservice.services.mappers.UserMapper;
-import com.accenture.user_microservice.services.validations.ValidRoleType;
-import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private UserMapper userMapper;
-
-    @Mock
-    private ValidRoleType validRoleType;
+    @Mock private UserRepository userRepository;
+    @Mock private UserMapper userMapper;
 
     @InjectMocks
     private UserServiceImpl userService;
 
-    @Mock
-    private HttpServletRequest request;
-
     @Test
     void getAll_shouldReturnListOfUsers() {
-        List<UserEntity> userEntities = List.of(new UserEntity(), new UserEntity());
-        List<UserDtoOutput> userDtos = List.of(
-                new UserDtoOutput(1L, "user1", "user1@mail.com"),
-                new UserDtoOutput(2L, "user2", "user2@mail.com")
-        );
+        List<UserEntity> entities = List.of(new UserEntity(), new UserEntity());
+        List<UserDtoOutput> dtoList = List.of(new UserDtoOutput(), new UserDtoOutput());
 
-        when(userRepository.findAll()).thenReturn(userEntities);
-        when(userMapper.toUserDtoOutputList(userEntities)).thenReturn(userDtos);
+        when(userRepository.findAll()).thenReturn(entities);
+        when(userMapper.toUserDtoOutputList(entities)).thenReturn(dtoList);
 
-        List<UserDtoOutput> result = userService.getAll(request);
+        ArrayList<UserDtoOutput> result = userService.getAll();
 
-        verify(validRoleType).validateAdminRole(request);
         assertEquals(2, result.size());
-        assertEquals("user1@mail.com", result.get(0).getEmail());
+        verify(userRepository).findAll();
+        verify(userMapper).toUserDtoOutputList(entities);
     }
 
     @Test
-    void getAll_shouldThrowForbiddenAccessException_whenRoleIncorrect() {
-        doThrow(new ForbiddenAccessException()).when(validRoleType).validateAdminRole(request);
+    void getAll_shouldThrowInternalServerErrorException_onException() {
+        when(userRepository.findAll()).thenThrow(new RuntimeException("DB error"));
 
-        assertThrows(ForbiddenAccessException.class, () -> {
-            userService.getAll(request);
-        });
-
-        verify(validRoleType).validateAdminRole(request);
+        assertThrows(InternalServerErrorException.class, () -> userService.getAll());
     }
 
     @Test
-    void getAll_shouldThrowInternalServerErrorException_whenUnexpectedErrorOccurs() {
-
-        doThrow(new RuntimeException("Unexpected")).when(validRoleType).validateAdminRole(request);
-
-        assertThrows(InternalServerErrorException.class, () -> {
-            userService.getAll(request);
-        });
-
-        verify(validRoleType).validateAdminRole(request);
-    }
-
-    @Test
-    void changeRoleType_shouldUpdateAndReturnUser() {
+    void changeRoleType_shouldUpdateUserRole() {
         Long userId = 1L;
         UserDtoRole dtoRole = new UserDtoRole(RoleType.ADMIN);
-        UserEntity user = new UserEntity();
-        user.setRoleType(RoleType.USER);
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userRepository.save(user)).thenReturn(user);
+        UserEntity entity = new UserEntity();
+        setField(entity, "userId", 1L);
+        UserEntity savedEntity = new UserEntity();
+        savedEntity.setRoleType(RoleType.ADMIN);
 
         UserDtoEmailRole expectedDto = new UserDtoEmailRole("user@example.com", RoleType.ADMIN);
-        when(userMapper.toUserDtoEmailRole(user)).thenReturn(expectedDto);
 
-        UserDtoEmailRole result = userService.changeRoleType(request, userId, dtoRole);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(entity));
+        when(userRepository.save(entity)).thenReturn(savedEntity);
+        when(userMapper.toUserDtoEmailRole(savedEntity)).thenReturn(expectedDto);
 
-        verify(validRoleType).validateAdminRole(request);
+        UserDtoEmailRole result = userService.changeRoleType(userId, dtoRole);
+
         assertEquals(RoleType.ADMIN, result.getRoleType());
+        verify(userRepository).save(entity);
     }
 
     @Test
-    void changeRoleType_shouldThrowInternalServerErrorException_whenUnexpectedErrorOccurs() {
+    void changeRoleType_shouldThrowInternalServerErrorException_onError() {
         Long userId = 1L;
-        UserDtoRole role = new UserDtoRole(RoleType.ADMIN);
+        UserDtoRole dtoRole = new UserDtoRole(RoleType.ADMIN);
 
-        when(userRepository.findById(userId))
-                .thenThrow(new RuntimeException("Database failure"));
+        when(userRepository.findById(userId)).thenThrow(new RuntimeException("DB error"));
 
-        assertThrows(InternalServerErrorException.class, () -> {
-            userService.changeRoleType(request, userId, role);
-        });
-
-        verify(userRepository).findById(userId);
+        assertThrows(InternalServerErrorException.class, () -> userService.changeRoleType(userId, dtoRole));
     }
 
     @Test
-    void changeRoleType_shouldThrowForbiddenAccess_whenRoleIncorrect() {
-        Long userId = 1L;
-        UserDtoRole role = new UserDtoRole(RoleType.USER);
+    void createUser_shouldSaveAndReturnDto() {
+        UserDtoInput input = new UserDtoInput("newuser@example.com", "password", "USER");
+        UserEntity entity = new UserEntity();
+        setField(entity, "userId", 1L);
+        UserDtoOutput dtoOutput = new UserDtoOutput(1L,"testuser", "newuser@example.com");
 
-        when(userRepository.findById(userId))
-                .thenThrow(new ForbiddenAccessException());
-
-        assertThrows(ForbiddenAccessException.class, () -> {
-            userService.changeRoleType(request, userId, role);
-        });
-
-        verify(userRepository).findById(userId);
-    }
-
-    @Test
-    void createUser_shouldSaveAndReturnUser() {
-        UserDtoInput input = new UserDtoInput("newuser", "email@mail.com", "pass123");
-        UserEntity userEntity = new UserEntity();
-        userEntity.setEmail("email@mail.com");
-
-        when(userMapper.userDtoInputToEntity(input)).thenReturn(userEntity);
-        when(userRepository.save(userEntity)).thenReturn(userEntity);
-
-        UserDtoOutput output = new UserDtoOutput(1L, "newuser", "email@mail.com");
-        when(userMapper.toUserDtoOutput(userEntity)).thenReturn(output);
+        when(userMapper.userDtoInputToEntity(input)).thenReturn(entity);
+        when(userRepository.save(entity)).thenReturn(entity);
+        when(userMapper.toUserDtoOutput(entity)).thenReturn(dtoOutput);
 
         UserDtoOutput result = userService.createUser(input);
 
-        assertEquals("email@mail.com", result.getEmail());
+        assertEquals("newuser@example.com", result.getEmail());
+        verify(userRepository).save(entity);
     }
 
     @Test
-    void createUser_shouldThrowInternalServerErrorException_whenUnexpectedErrorOccurs() {
-        UserDtoInput input = new UserDtoInput("user", "email@mail.com", "pass");
+    void createUser_shouldThrowInternalServerErrorException_onError() {
+        UserDtoInput input = new UserDtoInput("fail@example.com", "123", "USER");
+        when(userMapper.userDtoInputToEntity(input)).thenThrow(new RuntimeException("Map error"));
 
-        when(userMapper.userDtoInputToEntity(input))
-                .thenThrow(new RuntimeException("Mapping failure"));
-
-        assertThrows(InternalServerErrorException.class, () -> {
-            userService.createUser(input);
-        });
-
-        verify(userMapper).userDtoInputToEntity(input);
+        assertThrows(InternalServerErrorException.class, () -> userService.createUser(input));
     }
 
-
     @Test
-    void getUserById_shouldReturnUserIfExists() {
+    void getUserById_shouldReturnUserDto() {
         Long userId = 1L;
-        UserEntity userEntity = new UserEntity();
-        userEntity.setEmail("found@mail.com");
+        UserEntity entity = new UserEntity();
+        UserDtoIdUsernameEmail dto = new UserDtoIdUsernameEmail(userId, "user", "user@example.com");
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(userEntity));
-
-        UserDtoIdUsernameEmail expectedDto = new UserDtoIdUsernameEmail(userId, "found", "found@mail.com");
-        when(userMapper.toUserDtoIdUsernameEmail(userEntity)).thenReturn(expectedDto);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(entity));
+        when(userMapper.toUserDtoIdUsernameEmail(entity)).thenReturn(dto);
 
         UserDtoIdUsernameEmail result = userService.getUserById(userId);
 
-        assertEquals("found@mail.com", result.getEmail());
+        assertEquals(userId, result.getUserId());
+        assertEquals("user@example.com", result.getEmail());
     }
 
-
     @Test
-    void getUserById_shouldThrowIfUserNotFound() {
-        Long userId = 99L;
+    void getUserById_shouldThrowUserNotFoundException() {
+        Long userId = 404L;
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> userService.getUserById(userId));
     }
 
+    @Test
+    void getUserById_shouldThrowInternalServerErrorException_onError() {
+        Long userId = 1L;
+        when(userRepository.findById(userId)).thenThrow(new RuntimeException("DB error"));
+
+        assertThrows(InternalServerErrorException.class, () -> userService.getUserById(userId));
+    }
 
 }
