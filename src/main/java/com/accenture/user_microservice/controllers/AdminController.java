@@ -15,7 +15,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/user/admin")
 public class AdminController {
 
     private final UserService userService;
@@ -39,10 +39,5 @@ public class AdminController {
                 "Role updated successfully",
                 userDtoEmailRole
         );
-    }
-
-    @GetMapping("/user-by-id/{userId}")
-    public UserDtoIdUsernameEmail getUserById(@PathVariable Long userId) {
-        return userService.getUserById(userId);
     }
 }
