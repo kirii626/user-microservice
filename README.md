@@ -1,219 +1,245 @@
 # 🧑‍💼 User Microservice
 
-A secure, modular microservice built with Spring Boot for managing users and handling authentication via JWT. Designed to integrate seamlessly into a distributed microservice architecture.
+## 📘 Language Directory
+
+- [English Version](#-user-microservice-english)
+- [Versión en Español](#-microservicio-de-usuarios-español)
 
 ---
 
-## 📚 Table of Contents
+## 🧑‍💼 User Microservice (English)
 
-- [Overview](#-overview)
-- [Features](#-features)
-- [Architecture](#-architecture)
-- [Tech Stack](#-tech-stack)
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#-prerequisites)
-  - [Setup](#%EF%B8%8F-setup)
-  - [Configure the Database](#%EF%B8%8F-configure-the-database)
-  - [Eureka server configuration](#%EF%B8%8F-eureka-server-configuration)
-  - [Redis cache configuration](#%EF%B8%8F-redis-cache-configuration)
-  - [Running the Application](#%EF%B8%8F-running-the-application)
-- [Security](#-security)
-  - [How works JWT in this project?](#how-works-JWT-in-this-project)
-  - [Authentication Flow](#-authentication-flow)
-  - [Token Structure](#-token-structure)
-- [Project Structure](#-project-structure)
+### 📁 Project Structure
 
----
+```
+user_microservice
+├── config
+│   └── security (interceptors, Redis and Web MVC configuration)
+├── controllers (REST endpoints)
+├── dtos (input/output)
+├── exceptions (custom error handling)
+├── models (entities and enums)
+├── repositories (data access)
+├── services (interfaces, implementations, and mapping)
+├── utils
+└── UserMicroserviceApplication.java
+```
 
-## 📝 Overview
+### 📌 Core Features
 
-This microservice provides RESTful endpoints to manage user registration, authentication, and data access. It uses JWT for stateless authentication and adheres to clean architectural practices.
+- User registration and JWT-based authentication.
+- Role management for administrators.
+- Internal API access protected by a secret token.
+- Token validation through gateway filter.
+- Security interceptors based on endpoint type.
+- Result caching via Redis.
+- Role-based access control.
+- External access blocked for internal-only endpoints.
 
----
+### 🔐 Security
 
-## ✨ Features
+- JWT authentication with secret key.
+- Token expiration controlled by `jwt.expiration`.
+- Role embedded in JWT and validated in backend.
+- Interceptors:
+  - `AdminRoleInterceptor`: Grants access to admin routes for `ADMIN` role only.
+  - `InternalCallInterceptor`: Requires `X-Internal-Token` header.
+- Tokens are also validated at the API Gateway level.
 
-- ✅ User registration and login
-- 🔐 JWT-based authentication
-- 🧂 BCrypt password hashing
-- 🛡 Role-based access (admin endpoints)
-- 📡 RESTful API design
-- 🔄 DTOs for clean request/response formatting
+### 📡 API Endpoints
 
----
+#### 🔑 AuthController (`/api/user/auth`)
 
-## 🏗 Architecture
+##### `POST /register`
+- Registers a new user.
+- **Body**: `UserDtoInput` (username, email, password)
+- **Response**: `201 Created` with `UserDtoOutput`
+- **Errors**: `400 Bad Request`
 
-This is the complete architecture which user-microservice formes part
+![Register](docs/images/AuthController-registerUser.png)
 
-![Untitled Diagram drawio](https://github.com/user-attachments/assets/64d6f647-3342-4655-b840-3784560d0c3b)
+##### `POST /log-in`
+- Authenticates user, returns JWT.
+- **Body**: `UserDtoEmailPassword`
+- **Response**: `200 OK` with JWT
+- **Errors**: `401 Unauthorized`
 
-These are the elements of user-microservice: 
+![Login](docs/images/AuthController-authenticateUser.png)
 
-- **Controller Layer:** Manages incoming HTTP requests and responses
-- **Service Layer:** Core business logic (`AuthService`, etc.)
-- **Repository Layer:** Data persistence and database operations
-- **DTOs:** Decouple internal models from external requests
-- **Security:** Stateless JWT-based security with encrypted passwords
+#### 👨‍💼 AdminController (`/api/user/admin`)
 
----
+##### `GET /all-users`
+- Returns all users (ADMIN only).
+- **Response**: `200 OK` with list of `UserDtoOutput`
+- **Errors**: `403 Forbidden`, `401 Unauthorized`
 
-## ⚙️ Tech Stack
+![All Users](docs/images/AdminController-getAllUsers.png)
 
-| Component       | Technology       |
-|----------------|------------------|
-| Language        | Java 21+         |
-| Framework       | Spring Boot      |
-| Build Tool      | Maven            |
-| ORM             | Spring Data JPA  |
-| Database        | PostgreSQL / MySQL / H2 |
-| Authentication  | JWT              |
-| Testing         | JUnit, Mockito   |
+##### `PATCH /change-role/{userId}`
+- Changes user role.
+- **Body**: `UserDtoRole`
+- **Response**: `200 OK` with `UserDtoEmailRole`
+- **Errors**: `404 Not Found`, `403 Forbidden`, `500 Internal Server Error`
 
----
+![Change Role](docs/images/AdminController-changeRoleType.png)
 
-## 🚀 Getting Started
+#### 🛡️ InternalUseController (`/api/user/admin/internal-use`)
 
-### ✅ Prerequisites
+##### `GET /user-by-id/{userId}`
+- Returns user basic info. Internal only.
+- **Header**: `X-Internal-Token`
+- **Response**: `200 OK` with `UserDtoIdUsernameEmail`
+- **Errors**: `403 Forbidden`, `404 Not Found`
 
-- Java 21+
-- Maven 3.8+
-- (Optional) Docker (for local database setup)
+![Internal User](docs/images/InternalUseController-getUserById.png)
 
-### ⚙️ Setup 
+### 🧪 Profiles
 
-🔧 Clone the repository:
+| Profile     | Description                                                              |
+|-------------|--------------------------------------------------------------------------|
+| `default`   | Shared properties across environments.                                   |
+| `dev`       | Uses H2 and auto-creates schema.                                         |
+| `init`      | Creates schema and loads data (data.sql).                                |
+| `docker`    | Production-ready. Uses PostgreSQL, no auto-creation of schema/data.      |
 
-        git clone https://github.com/your-org/user-microservice.git
-        cd user-microservice
-        
-### ⚙️ General Configurations
+### 📦 Key Dependencies
 
-🔧  You'll find the general configurations at applications.properties defined using environment variables like this: 
+- Spring Boot 3.4.4
+- Spring Data JPA
+- Spring Security + JWT (JJWT)
+- Spring Cloud Netflix Eureka (Eureka Client)
+- Redis Cache
+- H2 & PostgreSQL
+- Jacoco + SonarQube
 
-    jwt.expiration=${JWT_EXPIRATION}
-    jwt.secret=${JWT_SECRET}
-    
-    spring.cache.type=redis
-    spring.redis.host={SPRING_REDIS_HOST}
-    spring.redis.port={REDIS_PORT}
+### 🎯 SonarQube – Code Quality
 
-so you need to define them on your IDE, using a .env file or just putting the configurations directly on the .properties file instead(this is the most unsafe option).
-   
-### ⚙️ Configure the Database
+![SonarQube](./docs/images/stats-sonarqube.png)
 
-🔧 Update Database Credentials
+- ✅ Coverage: 79.8%
+- ✅ Security Issues: 0
+- ✅ Duplications: 0%
+- ✅ Maintainability: Grade A
 
-#### For developing 
+### 🚀 Run Locally
 
-Edit the following file to configure your H2 database connection while developing:
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -Dspring-boot.run.profiles=init
+./mvnw spring-boot:run -Dspring-boot.run.profiles=docker
+```
 
-📄 `src/main/resources/application-dev.properties`
+### 🐳 Docker or Podman
 
-Example:
+Ready for deployment on Docker as part of a larger stack (gateway, config-server, etc.). Typically runs alongside Eureka Server and PostgreSQL.
 
-    spring.h2.console.enabled=true
-    spring.h2.console.path=/h2-console
-    spring.datasource.url=jdbc:h2:mem:testdb
+### ✅ Tests and Coverage
 
-#### For postgres using Docker/Podman
+Coverage is managed by Jacoco and reported to SonarQube. To run tests, create an `application-test.properties` profile with all necessary environment variables and configurations, and ensure you have a SonarQube container or installation. You can generate reports locally with:
 
-📄 `src/main/resources/application-docker.properties`
-
-Example: 
-
-    spring.datasource.username=your_user
-    spring.datasource.password=your_password
-    spring.datasource.driver-class-name=org.postgresql.Driver
-    spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
-
-### ⚙️ Eureka server configuration
-
-📄 `src/main/resources/application.properties`
-
-Example: 
-
-    eureka.client.service-url.defaultZone=http://localhost:your_port/eureka/
-    eureka.client.register-with-eureka=true
-    eureka.client.fetch-registry=true 
-    eureka.instance.prefer-ip-address=true
-
-### ⚙️ JWT configuration
-
-Example: 
-
-    jwt.secret=your_jwt_secret_key
-    jwt.expiration=3600000  # in milliseconds
-
-### ⚙️ Redis cache configuration
-
-Example:
-
-    spring.cache.type=redis
-    spring.redis.host=localhost
-    spring.redis.port=your_port
-
-### ▶️ Running the Application 
-
-Run using Maven:
-
-    ./mvnw spring-boot:run
-
-or
-
-    mvn spring-boot:run
-    
-The service will be available by default at:
-
-    http://localhost:8080
-    
-but you can configure it at application.properties file using this line at application.properties: 
-
-    server.port=8085
-
-## Security
-### How works JWT in this project? 
-This project uses JSON Web Tokens (JWT) for stateless, secure authentication and authorization across its REST API.
+```bash
+./mvnw clean verify
+# Report in: target/site/jacoco/index.html
+```
 
 ---
 
-### 🔑 Authentication Flow
+## 🧑‍💼 Microservicio de Usuarios (Español)
 
-When a user logs in via:
+### 📁 Estructura del proyecto
 
-    POST /api/auth/log-in
+```
+user_microservice
+├── config
+│   └── security (interceptores, configuración Redis y Web MVC)
+├── controllers (endpoints REST)
+├── dtos (input/output)
+├── exceptions (manejo de errores customizados)
+├── models (entidades y enums)
+├── repositories (acceso a datos)
+├── services (interfaces, implementaciones y mapeos)
+├── utils
+└── UserMicroserviceApplication.java
+```
 
-- Their credentials are validated by the backend.
-- If valid, a JWT is generated and returned in the response.
-- The token contains encoded user information and is cryptographically signed.
+### 📌 Funcionalidades principales
 
----
+- Registro de usuarios y autenticación con JWT.
+- Gestión de roles (por administradores).
+- Consulta interna protegida por token secreto.
+- Validación de tokens desde gateway mediante filtros.
+- Interceptores de seguridad aplicados según endpoint.
+- Cacheo de resultados con Redis.
+- Control de acceso granular por roles.
+- Protección contra llamadas externas a endpoints internos.
 
-### 📦 Token Structure
+### 🔐 Seguridad
 
-- The JWT consists of three parts: `header.payload.signature`
-- It includes user identification data, such as the user's ID or email, and the role of the user for allow access to resources.
-- It is signed using a secret key configured at application.properties:
+- Autenticación mediante JWT firmado con clave secreta.
+- Expiración configurable para tokens (`jwt.expiration`).
+- Roles embebidos en el token y validados en backend.
+- Interceptores:
+  - `AdminRoleInterceptor`: Permite acceso a endpoints de administración solo si el rol es `ADMIN`.
+  - `InternalCallInterceptor`: Requiere header `X-Internal-Token`.
+- Validación previa de token también en el API Gateway.
 
-      jwt.secret=your_jwt_secret
-      jwt.expiration=3600000
+### 📡 Endpoints
 
-## 📁 Project Structure
+### 🧪 Perfiles de ejecución
 
-    src/
-     └── main/
-         ├── java/com/accenture/user_microservice/
-         │    ├── controllers/        # REST controllers
-         │    ├── services/           # Business logic
-         │    │    └── AuthService.java
-         │    ├── dtos/               # Data Transfer Objects
-         │    │    ├── input/
-         │    │    │    └── UserDtoInput.java
-         │    │    └── output/
-         │    │         └── UserDtoOutput.java
-         │    ├── entities/           # JPA Entities
-         │    ├── repositories/       # Spring Data JPA Repositories
-         │    └── security/           # JWT, filters, config
-         └── resources/
-              └── application.properties
+| Perfil     | Descripción                                                                 |
+|------------|-----------------------------------------------------------------------------|
+| `default`  | Propiedades generales compartidas.                                          |
+| `dev`      | Usa H2 y crea las tablas automáticamente.                                   |
+| `init`     | Crea las tablas y carga datos desde `data.sql`.                             |
+| `docker`   | Producción: usa PostgreSQL, no crea ni carga datos automáticamente.         |
 
+### 📦 Dependencias destacadas
+
+- Spring Boot 3.4.4
+- Spring Data JPA
+- Spring Security + JWT (JJWT)
+- Spring Cloud Netflix Eureka (Eureka Client)
+- Redis Cache
+- H2 & PostgreSQL
+- Jacoco + SonarQube
+
+### 🎯 SonarQube – Calidad del Código
+
+![SonarQube](./docs/images/stats-sonarqube.png)
+
+- ✅ Cobertura: 79.8%
+- ✅ Problemas de seguridad: 0
+- ✅ Duplicación: 0%
+- ✅ Mantenibilidad: A
+
+### 🚀 Ejecución local
+
+Perfil dev: 
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+Perfil init: 
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=init
+```
+
+Perfil docker:
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=docker
+```
+
+### 🐳 Docker o Podman
+
+Este microservicio está listo para correr en entornos Docker como parte de un stack mayor (gateway, config-server, etc.). Usualmente se ejecuta en conjunto con Eureka Server y una base PostgreSQL.
+### ✅ Pruebas y cobertura
+
+La cobertura es gestionada por Jacoco y reportada a SonarQube, por lo que si quieres ejecutar los tests, deberás crear un perfil application-test.properties y 
+definir todas las variables de entorno y configuraciones, además deberás tener un contenedor de SonarQube o instalarlo. Puedes generar los reportes localmente con:
+
+
+```bash
+./mvnw clean verify
+# Reporte en: target/site/jacoco/index.html
+```
