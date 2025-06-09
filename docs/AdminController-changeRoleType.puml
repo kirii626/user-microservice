@@ -1,0 +1,55 @@
+@startuml
+skinparam dpi 300
+skinparam maxMessageSize 160
+
+participant "Client" as client
+participant "AdminRoleInterceptor" as interceptor
+participant "AdminController" as controller
+participant "UserService" as service
+participant "Redis Cache" as cache
+participant "Database" as db
+
+client -> interceptor: PATCH /api/user/admin/change-role/{userId}
+activate interceptor
+
+interceptor -> interceptor: Check JWT token presence\nand ADMIN role
+alt Token invalid or not ADMIN role
+    interceptor --> client: 403 Forbidden
+else Token valid and ADMIN role
+    interceptor --> controller: preHandle = true
+    deactivate interceptor
+
+    activate controller
+    controller -> service: changeRoleType(userId, userDtoRole)
+    activate service
+
+    service -> db: findById(userId)
+    activate db
+
+    alt User not found
+        db --> service: null
+        service --> controller: UserNotFoundException
+        controller --> client: 404 Not Found
+    else User found
+        db --> service: User entity
+
+        service -> service: Update user role
+        service -> db: save(updatedUser)
+        db --> service: Saved user
+
+        service -> cache: Invalidate user cache
+        activate cache
+        cache --> service: Cache cleared
+        deactivate cache
+
+        service --> service: Map to UserDtoEmailRole
+        service --> controller: UserDtoEmailRole
+        deactivate service
+
+        controller --> controller: Create ApiResponse
+        controller --> client: 200 OK + Response body
+    end
+    deactivate db
+    deactivate controller
+end
+@enduml

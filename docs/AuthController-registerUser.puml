@@ -1,0 +1,51 @@
+@startuml
+skinparam dpi 300
+skinparam maxMessageSize 160
+
+participant "Client" as client
+participant "AuthController" as controller
+participant "AuthService" as auth
+participant "PasswordEncoder" as encoder
+participant "Redis Cache" as cache
+participant "Database" as db
+
+client -> controller: POST /api/user/auth/register
+activate controller
+
+controller -> auth: createUser(userDtoInput)
+activate auth
+
+auth -> db: findByEmail(email)
+activate db
+
+alt Email already exists
+    db --> auth: User found
+    auth --> controller: EmailAlreadyTakenException
+    controller --> client: 409 Conflict
+else Email available
+    db --> auth: null
+
+    auth -> encoder: encode(password)
+    activate encoder
+    encoder --> auth: encodedPassword
+    deactivate encoder
+
+    auth -> auth: Create User entity
+    auth -> db: save(newUser)
+    db --> auth: Saved user
+
+    auth -> cache: Store in cache
+    activate cache
+    cache --> auth: Cache deleted
+    deactivate cache
+
+    auth --> auth: Map to UserDtoOutput
+    auth --> controller: UserDtoOutput
+    deactivate auth
+
+    controller --> controller: Create ApiResponse
+    controller --> client: 200 OK + Response body
+end
+deactivate db
+deactivate controller
+@enduml

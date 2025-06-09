@@ -1,0 +1,53 @@
+@startuml
+skinparam dpi 300
+skinparam maxMessageSize 160
+
+participant "Client" as client
+participant "AuthController" as controller
+participant "AuthService" as auth
+participant "UserService" as userService
+participant "PasswordEncoder" as encoder
+participant "JwtService" as jwt
+participant "Database" as db
+
+client -> controller: POST /api/user/auth/log-in
+activate controller
+
+controller -> auth: authenticateAndGenerateToken(email, password)
+activate auth
+
+auth -> db: findByEmail(email)
+activate db
+
+alt User not found
+    db --> auth: null
+    auth --> controller: InvalidCredentialsException
+    controller --> client: 401 Unauthorized
+else User found
+    db --> auth: User entity
+
+    auth -> encoder: matches(rawPassword, encodedPassword)
+    activate encoder
+
+    alt Invalid password
+        encoder --> auth: false
+        auth --> controller: InvalidCredentialsException
+        controller --> client: 401 Unauthorized
+    else Valid password
+        encoder --> auth: true
+        deactivate encoder
+
+        auth -> jwt: generateToken(user)
+        activate jwt
+        jwt --> auth: JWT token
+        deactivate jwt
+
+        auth --> controller: JWT token
+        deactivate auth
+
+        controller --> client: 200 OK + JWT token
+    end
+end
+deactivate db
+deactivate controller
+@enduml

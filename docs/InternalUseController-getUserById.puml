@@ -1,0 +1,56 @@
+@startuml
+skinparam dpi 300
+skinparam maxMessageSize 160
+
+participant "Client" as client
+participant "InternalCallInterceptor" as interceptor
+participant "InternalUseController" as controller
+participant "UserService" as service
+participant "Redis Cache" as cache
+participant "Database" as db
+
+client -> interceptor: GET /api/user/admin/internal-use/user-by-id/{userId}
+activate interceptor
+
+interceptor -> interceptor: Check X-Internal-Token header\nmatches internal.secret.token
+alt Invalid or missing token
+    interceptor --> client: 403 Forbidden + "Unauthorized internal access"
+else Valid internal token
+    interceptor --> controller: preHandle = true
+    deactivate interceptor
+
+    activate controller
+    controller -> service: getUserById(userId)
+    activate service
+
+    service -> cache: Get user by ID
+    activate cache
+
+    alt Cache hit
+        cache --> service: UserDtoIdUsernameEmail
+    else Cache miss
+        cache --> service: null
+        service -> db: findById(userId)
+        activate db
+
+        alt User not found
+            db --> service: null
+            service --> controller: UserNotFoundException
+            controller --> client: 404 Not Found
+        else User found
+            db --> service: User entity
+            service --> service: Map to UserDtoIdUsernameEmail
+            service -> cache: Store in cache
+            cache --> service: Cache updated
+        end
+        deactivate db
+    end
+    deactivate cache
+
+    service --> controller: UserDtoIdUsernameEmail
+    deactivate service
+
+    controller --> client: 200 OK + UserDtoIdUsernameEmail
+    deactivate controller
+end
+@enduml

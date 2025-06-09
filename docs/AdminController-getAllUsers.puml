@@ -1,0 +1,51 @@
+@startuml
+skinparam dpi 300
+skinparam maxMessageSize 160
+
+participant "Client" as client
+participant "AdminRoleInterceptor" as interceptor
+participant "AdminController" as controller
+participant "UserService" as service
+participant "Redis Cache" as cache
+participant "Database" as db
+
+client -> interceptor: GET /api/user/admin/all-users
+activate interceptor
+
+interceptor -> interceptor: Check JWT token presence\nand ADMIN role
+alt Token invalid or not ADMIN role
+    interceptor --> client: 403 Forbidden
+else Token valid and ADMIN role
+    interceptor --> controller: preHandle = true
+    deactivate interceptor
+
+    activate controller
+    controller -> service: getAll()
+    activate service
+
+    service -> cache: Check cache for users
+    activate cache
+
+    alt Cache miss
+        cache --> service: No data found
+        service -> db: Query all users
+        activate db
+        db --> service: Raw user data
+        deactivate db
+
+        service --> service: Map to UserDtoOutput list
+        service -> cache: Store in cache
+        cache --> service: Cache updated
+    else Cache hit
+        cache --> service: Return cached UserDtoOutput list
+    end
+    deactivate cache
+
+    service --> controller: ArrayList<UserDtoOutput>
+    deactivate service
+
+    controller --> controller: Create ApiResponse
+    controller --> client: 200 OK + Response body
+    deactivate controller
+end
+@enduml
